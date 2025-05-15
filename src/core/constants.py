@@ -30,13 +30,21 @@ TWO = 2.0
 THOUSAND = 1e3
 GHz = 1e9
 
-
 # Default values for canopy parameters
 DEFAULT_LEAF_THICKNESS = 0.17  # Default leaf thickness (mm)
 DEFAULT_DRY_MASS_DENSITY = 0.3  # Default dry mass density (g/cm³)
 DEFAULT_WATER_VOLUMETRIC_FRACTION = 0.0  # Default water volumetric fraction (m3/m3)
 DEFAULT_LAI = 0.0  # Default leaf area index (m²/m²)
 DEFAULT_TEMPERATURE = 293.15  # Default temperature (K) - 20°C
+
+# Default values for soil parameters
+DEFAULT_SOIL_BULK_DENSITY = 1.3  # Default soil bulk density (g/cm³)
+DEFAULT_SOIL_SPECIFIC_DENSITY = 2.65  # Default soil specific density (g/cm³)
+DEFAULT_RMS_HGT = 0.01  # Default root mean square height (m)
+DEFAULT_CORR_LENGTH = 0.1  # Default correlation length (m)
+DEFAULT_SOIL_MOISTURE = 0.2  # Default soil moisture (m³/m³)
+DEFAULT_SAND_FRACTION = 0.5  # Default sand fraction
+DEFAULT_CLAY_FRACTION = 0.2  # Default clay fraction
 
 # Unit conversion factors
 MM_TO_M = 1e-3  # Millimeters to meters

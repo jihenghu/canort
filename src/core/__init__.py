@@ -5,5 +5,6 @@ This package contains the fundamental classes for canopy modeling.
 
 from .layer import Layer
 from .canopy import Canopy
+from .soil import Soil
 
-__all__ = ['Layer', 'Canopy'] 
+__all__ = ['Layer', 'Canopy', 'Soil'] 
