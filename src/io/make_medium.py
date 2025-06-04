@@ -2,38 +2,37 @@
 Functions for creating canopy layers and structures.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 import numpy as np
 
 from ..core.layer import Layer
 from ..core.canopy import Canopy
 from ..core.constants import *
+from ..core.soil import Soil
 
 def make_layer(
     thickness: float,
     temperature: float,
-    leaf_thickness: float = DEFAULT_LEAF_THICKNESS,
-    water_volumetric_fraction: float = DEFAULT_WATER_VOLUMETRIC_FRACTION,
-    lai: float = DEFAULT_LAI,
-    dry_mass_density: Optional[float] = DEFAULT_DRY_MASS_DENSITY,
-    dielectric_constant: Optional[complex] = None,
-    properties: Optional[Dict[str, Any]] = None
+    leaf_thickness: float = 0.2,
+    water_volumetric_fraction: float = 0.6,
+    lai: float = 1.0,
+    dry_mass_density: Optional[float] = 0.3,
+    diel_model: Literal['linear', 'maxwell_garnett', 'bruggeman'] = 'linear'
 ) -> Layer:
     """
-    Create a single canopy layer.
+    Create a single layer with specified parameters.
     
     Args:
-        thickness: Layer thickness (m)
-        temperature: Layer temperature (K)
-        leaf_thickness: Leaf thickness (mm)
-        water_volumetric_fraction: Water volumetric fraction (m3/m3)
-        lai: Leaf Area Index (m²/m²)
-        dry_mass_density: Dry density of the solid material (g/cm³)
-        dielectric_constant: Complex dielectric constant
-        properties: Additional layer properties
-    
+        thickness: Layer thickness in meters
+        temperature: Layer temperature in Kelvin
+        leaf_thickness: Leaf thickness in mm
+        water_volumetric_fraction: Leaf volumetric moisture content (m³/m³)
+        lai: Leaf area index (m²/m²)
+        dry_mass_density: Dry mass density in g/cm³
+        diel_model: Dielectric mixing model to use
+        
     Returns:
-        Layer: A canopy layer object
+        Layer: A new Layer instance
     """
     layer = Layer(
         thickness=thickness,
@@ -42,13 +41,8 @@ def make_layer(
         water_volumetric_fraction=water_volumetric_fraction,
         lai=lai,
         dry_mass_density=dry_mass_density,
-        dielectric_constant=dielectric_constant
+        diel_model=diel_model
     )
-    
-    if properties:
-        for key, value in properties.items():
-            setattr(layer, key, value)
-    
     return layer
 
 def make_canopy(
@@ -58,38 +52,36 @@ def make_canopy(
     water_volumetric_fractions: Optional[List[float]] = None,
     lais: Optional[List[float]] = None,
     dry_mass_densities: Optional[List[float]] = None,
-    dielectric_constants: Optional[List[complex]] = None
+    diel_models: Optional[List[Literal['linear', 'maxwell_garnett', 'bruggeman']]] = None
 ) -> Canopy:
     """
     Create a canopy with multiple layers.
     
     Args:
-        thicknesses: List of layer thicknesses (m)
-        temperatures: List of layer temperatures (K)
-        leaf_thicknesses: List of leaf thicknesses (mm)
-        water_volumetric_fractions: List of water volumetric fractions (m3/m3)
+        thicknesses: List of layer thicknesses in meters
+        temperatures: List of layer temperatures in Kelvin
+        leaf_thicknesses: List of leaf thicknesses in mm
+        water_volumetric_fractions: List of leaf volumetric moisture contents (m³/m³)
         lais: List of leaf area indices (m²/m²)
-        dry_mass_densities: List of dry mass densities (g/cm³)
-        dielectric_constants: List of complex dielectric constants
-    
+        dry_mass_densities: List of dry mass densities in g/cm³
+        diel_models: List of dielectric mixing models to use
+        
     Returns:
-        Canopy: A canopy object with the specified layers
+        Canopy: A new Canopy instance
     """
     n_layers = len(thicknesses)
     
-    # Validate input arrays have the same length
-    if len(temperatures) != n_layers:
-        raise ValueError("temperatures must have the same length as thicknesses")
-    if leaf_thicknesses is not None and len(leaf_thicknesses) != n_layers:
-        raise ValueError("leaf_thicknesses must have the same length as thicknesses")
-    if water_volumetric_fractions is not None and len(water_volumetric_fractions) != n_layers:
-        raise ValueError("water_volumetric_fractions must have the same length as thicknesses")
-    if lais is not None and len(lais) != n_layers:
-        raise ValueError("lais must have the same length as thicknesses")
-    if dry_mass_densities is not None and len(dry_mass_densities) != n_layers:
-        raise ValueError("dry_mass_densities must have the same length as thicknesses")
-    if dielectric_constants is not None and len(dielectric_constants) != n_layers:
-        raise ValueError("dielectric_constants must have the same length as thicknesses")
+    # Set default values if not provided
+    if leaf_thicknesses is None:
+        leaf_thicknesses = [0.2] * n_layers
+    if water_volumetric_fractions is None:
+        water_volumetric_fractions = [0.6] * n_layers
+    if lais is None:
+        lais = [1.0] * n_layers
+    if dry_mass_densities is None:
+        dry_mass_densities = [0.3] * n_layers
+    if diel_models is None:
+        diel_models = ['linear'] * n_layers
     
     # Create layers
     layers = []
@@ -97,11 +89,11 @@ def make_canopy(
         layer = make_layer(
             thickness=thicknesses[i],
             temperature=temperatures[i],
-            leaf_thickness=leaf_thicknesses[i] if leaf_thicknesses is not None else 0.2,
-            water_volumetric_fraction=water_volumetric_fractions[i] if water_volumetric_fractions is not None else 0.5,
-            lai=lais[i] if lais is not None else 1.0,
-            dry_mass_density=dry_mass_densities[i] if dry_mass_densities is not None else 0.3,
-            dielectric_constant=dielectric_constants[i] if dielectric_constants is not None else None
+            leaf_thickness=leaf_thicknesses[i],
+            water_volumetric_fraction=water_volumetric_fractions[i],
+            lai=lais[i],
+            dry_mass_density=dry_mass_densities[i],
+            diel_model=diel_models[i]
         )
         layers.append(layer)
     
@@ -110,34 +102,39 @@ def make_canopy(
 def create_uniform_canopy(
     n_layers: int,
     total_thickness: float,
-    temperature: float = DEFAULT_TEMPERATURE,
-    leaf_thickness: float = DEFAULT_LEAF_THICKNESS,
-    water_volumetric_fraction: float = DEFAULT_WATER_VOLUMETRIC_FRACTION,
-    total_lai: float = DEFAULT_LAI,
-    dry_mass_density: float = DEFAULT_DRY_MASS_DENSITY
+    temperature: float,
+    leaf_thickness: float = 0.2,
+    water_volumetric_fraction: float = 0.6,
+    total_lai: float = 3.0,
+    dry_mass_density: float = 0.3,
+    diel_model: Literal['linear', 'maxwell_garnett', 'bruggeman'] = 'linear'
 ) -> Canopy:
     """
-    Create a canopy with uniform layer properties.
+    Create a uniform canopy with evenly distributed properties.
     
     Args:
         n_layers: Number of layers
-        total_thickness: Total canopy thickness (m)
-        temperature: Layer temperature (K)
-        leaf_thickness: Leaf thickness (mm)
-        water_volumetric_fraction: Water volumetric fraction (m3/m3)
+        total_thickness: Total canopy thickness in meters
+        temperature: Layer temperature in Kelvin
+        leaf_thickness: Leaf thickness in mm
+        water_volumetric_fraction: Leaf volumetric moisture content (m³/m³)
         total_lai: Total leaf area index (m²/m²)
-        dry_mass_density: Dry mass density (g/cm³)
-    
+        dry_mass_density: Dry mass density in g/cm³
+        diel_model: Dielectric mixing model to use
+        
     Returns:
-        Canopy: A canopy with uniform layer properties
+        Canopy: A new Canopy instance with uniform properties
     """
-    # Create uniform arrays
-    thicknesses = [total_thickness / n_layers] * n_layers
+    layer_thickness = total_thickness / n_layers
+    layer_lai = total_lai / n_layers
+    
+    thicknesses = [layer_thickness] * n_layers
     temperatures = [temperature] * n_layers
     leaf_thicknesses = [leaf_thickness] * n_layers
     water_volumetric_fractions = [water_volumetric_fraction] * n_layers
-    lais = [total_lai / n_layers] * n_layers
+    lais = [layer_lai] * n_layers
     dry_mass_densities = [dry_mass_density] * n_layers
+    diel_models = [diel_model] * n_layers
     
     return make_canopy(
         thicknesses=thicknesses,
@@ -145,5 +142,6 @@ def create_uniform_canopy(
         leaf_thicknesses=leaf_thicknesses,
         water_volumetric_fractions=water_volumetric_fractions,
         lais=lais,
-        dry_mass_densities=dry_mass_densities
+        dry_mass_densities=dry_mass_densities,
+        diel_models=diel_models
     ) 

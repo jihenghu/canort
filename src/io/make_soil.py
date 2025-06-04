@@ -13,7 +13,7 @@ def make_soil(
     clay: float = 0.3,  # 30% clay
     rms_hgt: Optional[float] = None,  # Root mean square height in meters
     corr_length: Optional[float] = None,  # Correlation length in meters
-    diel_model: Literal["dobson", "mironov", "wang"] = "dobson",
+    diel_model: Literal["dobson85", "mironov04", "wang80"] = "dobson85",
     bulk_density: Optional[float] = None,  # Bulk density in g/cm³
     specific_density: Optional[float] = None,  # Specific density in g/cm³
 ) -> Soil:
@@ -26,7 +26,7 @@ def make_soil(
         clay: Clay fraction (0-1). Default is 0.3 (30%).
         rms_hgt: Root mean square height in meters. Optional.
         corr_length: Correlation length in meters. Optional.
-        diel_model: Dielectric model to use. One of "dobson", "mironov", or "wang".
+        diel_model: Dielectric model to use. One of "dobson85", "mironov04", or "wang80".
         bulk_density: Bulk density in g/cm³. Optional.
         specific_density: Specific density in g/cm³. Optional.
         
@@ -50,7 +50,7 @@ def create_sandy_soil(
     moisture: float = 0.15,
     rms_hgt: Optional[float] = None,
     corr_length: Optional[float] = None,
-    diel_model: Literal["dobson", "mironov", "wang"] = "dobson",
+    diel_model: Literal["dobson85", "mironov04", "wang80"] = "dobson85",
 ) -> Soil:
     """Create a sandy soil instance (80% sand, 10% clay).
     
@@ -59,7 +59,7 @@ def create_sandy_soil(
         moisture: Volumetric soil moisture (0-1). Default is 0.15 (15%).
         rms_hgt: Root mean square height in meters. Optional.
         corr_length: Correlation length in meters. Optional.
-        diel_model: Dielectric model to use. One of "dobson", "mironov", or "wang".
+        diel_model: Dielectric model to use. One of "dobson85", "mironov04", or "wang80".
         
     Returns:
         Soil: Configured sandy soil instance
@@ -79,7 +79,7 @@ def create_clayey_soil(
     moisture: float = 0.25,
     rms_hgt: Optional[float] = None,
     corr_length: Optional[float] = None,
-    diel_model: Literal["dobson", "mironov", "wang"] = "dobson",
+    diel_model: Literal["dobson85", "mironov04", "wang80"] = "dobson85",
 ) -> Soil:
     """Create a clayey soil instance (20% sand, 60% clay).
     
@@ -88,7 +88,7 @@ def create_clayey_soil(
         moisture: Volumetric soil moisture (0-1). Default is 0.25 (25%).
         rms_hgt: Root mean square height in meters. Optional.
         corr_length: Correlation length in meters. Optional.
-        diel_model: Dielectric model to use. One of "dobson", "mironov", or "wang".
+        diel_model: Dielectric model to use. One of "dobson85", "mironov04", or "wang80".
         
     Returns:
         Soil: Configured clayey soil instance
@@ -108,7 +108,7 @@ def create_loamy_soil(
     moisture: float = 0.2,
     rms_hgt: Optional[float] = None,
     corr_length: Optional[float] = None,
-    diel_model: Literal["dobson", "mironov", "wang"] = "dobson",
+    diel_model: Literal["dobson85", "mironov04", "wang80"] = "dobson85",
 ) -> Soil:
     """Create a loamy soil instance (40% sand, 20% clay).
     
@@ -117,7 +117,7 @@ def create_loamy_soil(
         moisture: Volumetric soil moisture (0-1). Default is 0.2 (20%).
         rms_hgt: Root mean square height in meters. Optional.
         corr_length: Correlation length in meters. Optional.
-        diel_model: Dielectric model to use. One of "dobson", "mironov", or "wang".
+        diel_model: Dielectric model to use. One of "dobson85", "mironov04", or "wang80".
         
     Returns:
         Soil: Configured loamy soil instance

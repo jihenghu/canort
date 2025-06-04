@@ -6,7 +6,6 @@ This module defines the Soil class which represents the soil surface properties.
 from typing import Literal, Optional
 from .constants import *
 from ..dielectrics.soil_dielectrics import SoilDiels
-from .sensor import Sensor
 
 class Soil:
     """A class representing soil surface properties."""
@@ -16,7 +15,7 @@ class Soil:
                  moisture: float = DEFAULT_SOIL_MOISTURE,
                  sand: float = DEFAULT_SAND_FRACTION,
                  clay: float = DEFAULT_CLAY_FRACTION,
-                 diel_model: Literal['dobson', 'mironov', 'wang'] = 'dobson',
+                 diel_model: Literal['dobson85', 'mironov04', 'wang80'] = 'dobson85',
                  rms_hgt: Optional[float] = DEFAULT_RMS_HGT,
                  corr_length: Optional[float] = DEFAULT_CORR_LENGTH,
                  bulk_density: Optional[float] = DEFAULT_SOIL_BULK_DENSITY,
@@ -29,7 +28,7 @@ class Soil:
             moisture: Volumetric soil moisture (m³/m³)
             sand: Sand fraction (0-1)
             clay: Clay fraction (0-1)
-            diel_model: Dielectric model to use ('dobson', 'mironov', or 'wang')
+            diel_model: Dielectric model to use ('dobson85', 'mironov04', or 'wang80')
             rms_hgt: Root mean square height (m), defaults to 0.01
             corr_length: Correlation length (m), defaults to 0.1
             bulk_density: Bulk density of soil (g/cm³), defaults to 1.3
@@ -70,12 +69,12 @@ class Soil:
         """Silt fraction (0-1)"""
         return ONE - self.sand - self.clay
     
-    def dielectric_constant(self, sensor: Sensor) -> complex:
+    def dielectric_constant(self, frequency: float) -> complex:
         """
         Calculate the complex dielectric constant of the soil.
         
         Args:
-            sensor: Sensor object containing the operating frequency
+            frequency: Operating frequency in GHz
             
         Returns:
             complex: Complex dielectric constant
@@ -83,7 +82,7 @@ class Soil:
         diel_const_func = SoilDiels.get_model(self.diel_model)
         if diel_const_func is None:
             raise ValueError(f"Unknown dielectric model: {self.diel_model}")
-        return diel_const_func(self, sensor.frequency)
+        return diel_const_func(self, frequency)
     
     def __str__(self) -> str:
         """String representation of the Soil object."""

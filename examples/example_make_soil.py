@@ -1,82 +1,99 @@
 """
-Example script demonstrating the usage of soil creation functions in CanORT.
-This script shows how to create different types of soil instances.
+Example script for creating and testing soil types in CanORT.
+This script demonstrates how to create different soil types and test their dielectric properties.
+
+Example usage:
+    python examples/example_make_soil.py
 """
 
 import sys
-from pathlib import Path
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Add the project root directory to Python path
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
+import numpy as np
+from src.dielectrics.soil_dielectrics import SoilDiels
 
-from src.io.make_soil import (
-    make_soil,
-    create_sandy_soil,
-    create_clayey_soil,
-    create_loamy_soil
-)
-from src.io.sensor_list import smap
+class SimpleSoil:
+    """A simple implementation of the SoilLike protocol for testing."""
+    def __init__(self, moisture, sand, clay, temperature, bulk_density, specific_density):
+        self.moisture = moisture
+        self.sand = sand
+        self.clay = clay
+        self.temperature = temperature
+        self.bulk_density = bulk_density
+        self.specific_density = specific_density
+
+def create_soil_examples():
+    """Create example soil types with different properties."""
+    return {
+        "Sandy Loam": SimpleSoil(
+            moisture=0.25,      # 25% volumetric water content
+            sand=0.5,          # 50% sand
+            clay=0.2,          # 20% clay
+            temperature=293.15, # 20°C
+            bulk_density=1.3,   # g/cm³
+            specific_density=2.65 # g/cm³
+        ),
+        "Clay Soil": SimpleSoil(
+            moisture=0.35,      # 35% volumetric water content
+            sand=0.2,          # 20% sand
+            clay=0.6,          # 60% clay
+            temperature=293.15, # 20°C
+            bulk_density=1.4,   # g/cm³
+            specific_density=2.65 # g/cm³
+        ),
+        "Sandy Soil": SimpleSoil(
+            moisture=0.15,      # 15% volumetric water content
+            sand=0.8,          # 80% sand
+            clay=0.1,          # 10% clay
+            temperature=293.15, # 20°C
+            bulk_density=1.2,   # g/cm³
+            specific_density=2.65 # g/cm³
+        )
+    }
+
+def print_soil_properties(soil, name):
+    """Print soil properties in a formatted way."""
+    print(f"\n{name} Properties:")
+    print("-" * 40)
+    print(f"Moisture:     {soil.moisture:.2f} m³/m³")
+    print(f"Sand:         {soil.sand:.2f}")
+    print(f"Clay:         {soil.clay:.2f}")
+    print(f"Temperature:  {soil.temperature-273.15:.1f}°C")
+    print(f"Bulk density: {soil.bulk_density:.2f} g/cm³")
+
+def test_dielectric_models(soil, frequencies):
+    """Test different dielectric models for given soil and frequencies."""
+    print("\nDielectric Constants:")
+    print("=" * 60)
+    
+    for freq in frequencies:
+        print(f"\nFrequency: {freq:.1f} GHz")
+        print("-" * 40)
+        
+        # Test each model
+        for model_name in ["dobson85", "mironov04", "wang80"]:
+            model = SoilDiels.get_model(model_name)
+            eps = model(soil, freq)
+            print(f"{model_name:10s}: {eps.real:6.2f} + {eps.imag:6.2f}j")
 
 def main():
-    # Example 1: Create a basic soil with default parameters
-    soil1 = make_soil()
-    print("\n1. Basic soil with default parameters:")
-    print(soil1)
+    """Main function to run the soil creation and dielectric testing."""
+    print("Soil Creation and Dielectric Testing")
+    print("===================================")
     
-    # Example 2: Create a sandy soil
-    soil2 = create_sandy_soil()
-    print("\n2. Sandy soil (80% sand, 10% clay):")
-    print(soil2)
+    # Create example soils
+    soils = create_soil_examples()
     
-    # Example 3: Create a clayey soil
-    soil3 = create_clayey_soil()
-    print("\n3. Clayey soil (20% sand, 60% clay):")
-    print(soil3)
+    # Test frequencies (GHz)
+    frequencies = [1.4, 5.0, 10.0]
     
-    # Example 4: Create a loamy soil
-    soil4 = create_loamy_soil()
-    print("\n4. Loamy soil (40% sand, 20% clay):")
-    print(soil4)
-    
-    # Example 5: Create a soil with custom parameters
-    soil5 = make_soil(
-        temperature=298.15,  # 25°C
-        moisture=0.3,  # 30% moisture
-        sand=0.6,
-        clay=0.2,
-        rms_hgt=0.01,  # 1 cm
-        corr_length=0.05,  # 5 cm
-        diel_model="mironov"
-    )
-    print("\n5. Custom soil with all parameters specified:")
-    print(soil5)
-    
-    # Example 6: Calculate dielectric constant for different soil types
-    sensor = smap()  # Use SMAP sensor configuration
-    print(sensor)
-
-    print("\n6. Dielectric constant calculation for different soil types:")
-    print(f"Sandy soil: {soil2.dielectric_constant(sensor):.3f}")
-    print(f"Clayey soil: {soil3.dielectric_constant(sensor):.3f}")
-    print(f"Loamy soil: {soil4.dielectric_constant(sensor):.3f}")
-    
-    # Example 7: Create soils with different dielectric models
-    soil_dobson = make_soil(diel_model="dobson")
-    soil_mironov = make_soil(diel_model="mironov")
-    soil_wang = make_soil(diel_model="wang")
-    print("\n7. Dielectric constant with different models:")
-    print(f"Dobson model: {soil_dobson.dielectric_constant(sensor):.3f}")
-    print(f"Mironov model: {soil_mironov.dielectric_constant(sensor):.3f}")
-    print(f"Wang model: {soil_wang.dielectric_constant(sensor):.3f}")
-    
-    # Example 8: Create soil with bulk and specific density
-    soil8 = make_soil(
-        bulk_density=1.5,  # 1.5 g/cm³
-        specific_density=2.65  # 2.65 g/cm³
-    )
-    print("\n8. Soil with density parameters:")
-    print(soil8)
+    # Test each soil type
+    for soil_name, soil in soils.items():
+        print(f"\n{soil_name}")
+        print("=" * 40)
+        print_soil_properties(soil, soil_name)
+        test_dielectric_models(soil, frequencies)
 
 if __name__ == "__main__":
     main() 

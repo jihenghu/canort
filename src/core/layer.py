@@ -4,8 +4,10 @@ This module defines the Layer class which represents a single layer in the canop
 """
 
 import warnings
-from typing import Optional
+from typing import Optional, Literal
 from .constants import *
+from ..dielectrics.leaf_dielectrics import LeafDiels
+from ..dielectrics.effective_dielectrics import EffectivePermittivityModels
 
 class Layer:
     """A single layer in the vegetation canopy."""
@@ -17,7 +19,8 @@ class Layer:
                  water_volumetric_fraction: float = DEFAULT_WATER_VOLUMETRIC_FRACTION,
                  lai: float = DEFAULT_LAI,
                  dry_mass_density: Optional[float] = DEFAULT_DRY_MASS_DENSITY,
-                 dielectric_constant: Optional[complex] = None):
+                 diel_model: Literal['ulaby87', 'matzler94'] = 'matzler94',
+                 effective_permittivity_model: Literal['maxwell_garnett', 'bruggeman'] = 'maxwell_garnett'):
         """
         Initialize a canopy layer.
         
@@ -28,7 +31,7 @@ class Layer:
             water_volumetric_fraction: Leaf Volumetric Moisture Content (m3/m3)
             lai: Leaf Area Index (m²/m²)
             dry_mass_density: Dry density of the solid material (g/cm³). Defaults to 0.3.
-            dielectric_constant: Complex dielectric constant
+            diel_model: Dielectric mixing model to use ('linear', 'maxwell_garnett', or 'bruggeman')
         """
         # Validate input parameters
         if thickness < MIN_LAYER_THICKNESS or thickness > MAX_LAYER_THICKNESS:
@@ -44,8 +47,55 @@ class Layer:
         self.water_volumetric_fraction = water_volumetric_fraction
         self.lai = lai
         self.dry_mass_density = dry_mass_density
-        self.dielectric_constant = dielectric_constant
+        self.diel_model = diel_model
+        self.effective_permittivity_model = effective_permittivity_model
     
+    def dielectric_constant(self, frequency: float) -> complex:
+        """
+        Calculate the complex dielectric constant of the layer.
+        
+        Args:
+            frequency: Operating frequency in GHz
+            
+        Returns:
+            complex: Complex dielectric constant
+        """
+        diel_const_func = LeafDiels.get_model(self.diel_model)
+        if diel_const_func is None:
+            raise ValueError(f"Unknown dielectric model: {self.diel_model}")
+        return diel_const_func(self, frequency)
+    
+    def effective_permittivity(self, frequency: float) -> complex:
+        """
+        Calculate the effective permittivity of the layer considering leaf volume density.
+        
+        The effective permittivity is calculated using a mixing model that accounts for:
+        1. The dielectric constant of the leaf material
+        2. The volume fraction of leaves in the layer
+        3. The air gaps between leaves
+        
+        Args:
+            frequency: Operating frequency in GHz
+            
+        Returns:
+            complex: Effective permittivity of the layer
+        """
+        eff_diel_func = EffectivePermittivityModels.get_model(self.effective_permittivity_model)
+        if eff_diel_func is None:
+            raise ValueError(f"Unknown effective permittivity model: {self.effective_permittivity_model}")
+        
+        return eff_diel_func(self, frequency)
+    
+    @property
+    def water_gravimetric_fraction(self) -> float:
+        """moisture content on a gravimetric wet-weight basis (mg), in g/g
+        (4.71a) of Ulaby and Long (2014)
+        """
+        mv=self.water_volumetric_fraction  # cm3/cm3
+        rhob=self.dry_mass_density # g/cm3
+        mg=mv/(mv+(1-mv)*rhob)  # g/g
+        return mg
+
     @property
     def layer_water_content(self) -> float:
         """Water content of the layer per unit area, in kg/m²"""
