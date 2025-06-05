@@ -15,23 +15,26 @@ class Layer:
     def __init__(self, 
                  thickness: float,
                  temperature: float,
+                 leaf_type: Literal['needle', 'sphere', 'disk'] = 'disk',
                  leaf_thickness: float = DEFAULT_LEAF_THICKNESS,
                  water_volumetric_fraction: float = DEFAULT_WATER_VOLUMETRIC_FRACTION,
                  lai: float = DEFAULT_LAI,
                  dry_mass_density: Optional[float] = DEFAULT_DRY_MASS_DENSITY,
                  diel_model: Literal['ulaby87', 'matzler94'] = 'matzler94',
-                 effective_permittivity_model: Literal['maxwell_garnett', 'bruggeman'] = 'maxwell_garnett'):
+                 effective_permittivity_model: Literal['power_law', 'typemodel'] = 'power_law'):
         """
         Initialize a canopy layer.
         
         Args:
             thickness: Layer thickness (m)
             temperature: Layer temperature (K)
+            leaf_type: Type of leaf shape ('needle', 'sphere', or 'disk'), defaults to 'disk'
             leaf_thickness: Leaf thickness (mm)
             water_volumetric_fraction: Leaf Volumetric Moisture Content (m3/m3)
             lai: Leaf Area Index (m²/m²)
             dry_mass_density: Dry density of the solid material (g/cm³). Defaults to 0.3.
-            diel_model: Dielectric mixing model to use ('linear', 'maxwell_garnett', or 'bruggeman')
+            diel_model: Dielectric mixing model to use ('ulaby87' or 'matzler94')
+            effective_permittivity_model: Effective permittivity model to use ('power_law', 'typemodel')
         """
         # Validate input parameters
         if thickness < MIN_LAYER_THICKNESS or thickness > MAX_LAYER_THICKNESS:
@@ -43,6 +46,8 @@ class Layer:
         
         self.thickness = thickness
         self.temperature = temperature
+        self.leaf_type = leaf_type  ## TODO: Mixed phases of leaves
+        # self.dewc=dewc  # TODO: dew and snow gannuals intercepted by the leaves
         self.leaf_thickness = leaf_thickness
         self.water_volumetric_fraction = water_volumetric_fraction
         self.lai = lai
@@ -50,6 +55,7 @@ class Layer:
         self.diel_model = diel_model
         self.effective_permittivity_model = effective_permittivity_model
     
+
     def dielectric_constant(self, frequency: float) -> complex:
         """
         Calculate the complex dielectric constant of the layer.
@@ -65,6 +71,7 @@ class Layer:
             raise ValueError(f"Unknown dielectric model: {self.diel_model}")
         return diel_const_func(self, frequency)
     
+
     def effective_permittivity(self, frequency: float) -> complex:
         """
         Calculate the effective permittivity of the layer considering leaf volume density.
@@ -80,11 +87,25 @@ class Layer:
         Returns:
             complex: Effective permittivity of the layer
         """
-        eff_diel_func = EffectivePermittivityModels.get_model(self.effective_permittivity_model)
+        if self.effective_permittivity_model == 'power_law':
+            eff_diel_func = EffectivePermittivityModels.get_model('power_law')
+        elif self.effective_permittivity_model == 'typemodel':
+            if self.leaf_type == 'sphere':
+                eff_diel_func = EffectivePermittivityModels.get_model('spheric')
+            elif self.leaf_type in ['needle', 'disk']:
+                eff_diel_func = EffectivePermittivityModels.get_model('nonspheric')
+        else:
+            raise ValueError(f"Unknown effective permittivity model: {self.effective_permittivity_model}")
+        
         if eff_diel_func is None:
             raise ValueError(f"Unknown effective permittivity model: {self.effective_permittivity_model}")
         
         return eff_diel_func(self, frequency)
+
+    @property
+    def leaf_volumetric_fraction(self) -> float:
+        """Leaf volumetric fraction occupies in the layer"""
+        return self.lai * self.leaf_thickness * MM_TO_M / self.thickness
     
     @property
     def water_gravimetric_fraction(self) -> float:

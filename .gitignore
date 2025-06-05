@@ -34,3 +34,18 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db 
+
+## images
+images/
+*.png
+*.pdf
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.webp
+*.svg
+*.ico
+*.heic
+*.heif

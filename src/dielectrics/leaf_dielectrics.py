@@ -5,7 +5,6 @@ This module provides leaf-specific dielectric constant calculations and properti
 
 from typing import Protocol, runtime_checkable, Dict, Callable, Literal
 import numpy as np
-from .effective_dielectrics import EffectivePermittivityModels, LeafLike
 from ..core.constants import *
 import warnings
 
@@ -22,8 +21,6 @@ class LeafLike(Protocol):
     water_volumetric_fraction: float
     water_gravimetric_fraction: float
     temperature: float
-
-
 
 class LeafDiels:
     """A class containing leaf-specific dielectric calculations and properties."""
